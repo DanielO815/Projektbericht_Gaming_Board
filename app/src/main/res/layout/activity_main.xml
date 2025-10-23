@@ -81,173 +81,52 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
+                        android:labelFor="@+id/editTextText"
                         android:text="Spiele vorschalgen:" />
 
+
+                    <EditText
+                        android:id="@+id/editTextText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:autofillHints="Spiel Name eingeben"
+                        android:ems="10"
+                        android:hint="Gewünschtes Spiel"
+                        android:inputType="text"
+                        android:text="" />
+
+                    <Button
+                        android:id="@+id/buttonVorschlagEingeben"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Spielvorschlag hinzufügen" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical">
 
-                        <CheckBox
-                            android:id="@+id/checkBoxSpiel1"
-                            android:layout_width="98dp"
-                            android:layout_height="54dp"
-                            android:text="SpielEins" />
-
-                        <CheckBox
-                            android:id="@+id/checkBoxSpiel2"
-                            android:layout_width="98dp"
-                            android:layout_height="54dp"
-                            android:text="SpielZwei" />
+                        <TextView
+                            android:id="@+id/vorgeschlageneSpieleAbstimmen"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Abstimmen über vorgeschlagene Spiele:" />
 
 
-                        <CheckBox
-                            android:id="@+id/checkBoxSpiel3"
-                            android:layout_width="98dp"
-                            android:layout_height="54dp"
-                            android:text="SpielDrei" />
+                        <RadioGroup
+                            android:id="@+id/radioGroupSpiele"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:paddingTop="8dp" />
+
 
                     </LinearLayout>
 
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="16dp">
 
 
-                        <androidx.constraintlayout.widget.ConstraintLayout
-                            android:id="@+id/poll_option_1_layout"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="8dp"
-                            android:background="#F0F0F0"
-                            android:padding="12dp">
 
-                            <ProgressBar
-                                android:id="@+id/vote_progress_bar_1"
-                                style="?android:attr/progressBarStyleHorizontal"
-                                android:layout_width="0dp"
-                                android:layout_height="0dp"
-                                android:progress="60"
-                                android:progressTint="#AED581"
-                                app:layout_constraintBottom_toBottomOf="parent"
-                                app:layout_constraintEnd_toEndOf="parent"
-                                app:layout_constraintStart_toStartOf="parent"
-                                app:layout_constraintTop_toTopOf="parent" />
-
-                            <TextView
-                                android:id="@+id/option_text_1"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:text="SpielEins"
-                                android:textColor="@android:color/black"
-                                app:layout_constraintBottom_toBottomOf="parent"
-                                app:layout_constraintEnd_toStartOf="@+id/vote_count_text_1"
-                                app:layout_constraintStart_toStartOf="parent"
-                                app:layout_constraintTop_toTopOf="parent" />
-
-                            <TextView
-                                android:id="@+id/vote_count_text_1"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="3"
-                                android:textColor="@android:color/darker_gray"
-                                android:textStyle="bold"
-                                app:layout_constraintBottom_toBottomOf="parent"
-                                app:layout_constraintEnd_toEndOf="parent"
-                                app:layout_constraintTop_toTopOf="parent" />
-                        </androidx.constraintlayout.widget.ConstraintLayout>
-
-                        <androidx.constraintlayout.widget.ConstraintLayout
-                            android:id="@+id/poll_option_2_layout"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="8dp"
-                            android:background="#F0F0F0"
-                            android:padding="12dp">
-
-                            <ProgressBar
-                                android:id="@+id/vote_progress_bar_2"
-                                style="?android:attr/progressBarStyleHorizontal"
-                                android:layout_width="0dp"
-                                android:layout_height="0dp"
-                                android:progress="20"
-                                android:progressTint="#AED581"
-                                app:layout_constraintBottom_toBottomOf="parent"
-                                app:layout_constraintEnd_toEndOf="parent"
-                                app:layout_constraintStart_toStartOf="parent"
-                                app:layout_constraintTop_toTopOf="parent" />
-
-                            <TextView
-                                android:id="@+id/option_text_2"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:text="SpielZwei"
-                                android:textColor="@android:color/black"
-                                app:layout_constraintBottom_toBottomOf="parent"
-                                app:layout_constraintEnd_toStartOf="@+id/vote_count_text_2"
-                                app:layout_constraintStart_toStartOf="parent"
-                                app:layout_constraintTop_toTopOf="parent" />
-
-                            <TextView
-                                android:id="@+id/vote_count_text_2"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="1"
-                                android:textColor="@android:color/darker_gray"
-                                android:textStyle="bold"
-                                app:layout_constraintBottom_toBottomOf="parent"
-                                app:layout_constraintEnd_toEndOf="parent"
-                                app:layout_constraintTop_toTopOf="parent" />
-                        </androidx.constraintlayout.widget.ConstraintLayout>
-
-                        <androidx.constraintlayout.widget.ConstraintLayout
-                            android:id="@+id/poll_option_3_layout"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="8dp"
-                            android:background="#F0F0F0"
-                            android:padding="12dp">
-
-                            <ProgressBar
-                                android:id="@+id/vote_progress_bar_3"
-                                style="?android:attr/progressBarStyleHorizontal"
-                                android:layout_width="0dp"
-                                android:layout_height="0dp"
-                                android:progress="20"
-                                android:progressTint="#AED581"
-                                app:layout_constraintBottom_toBottomOf="parent"
-                                app:layout_constraintEnd_toEndOf="parent"
-                                app:layout_constraintStart_toStartOf="parent"
-                                app:layout_constraintTop_toTopOf="parent" />
-
-                            <TextView
-                                android:id="@+id/option_text_3"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:text="SpielDrei"
-                                android:textColor="@android:color/black"
-                                app:layout_constraintBottom_toBottomOf="parent"
-                                app:layout_constraintEnd_toStartOf="@+id/vote_count_text_3"
-                                app:layout_constraintStart_toStartOf="parent"
-                                app:layout_constraintTop_toTopOf="parent" />
-
-                            <TextView
-                                android:id="@+id/vote_count_text_3"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="1"
-                                android:textColor="@android:color/darker_gray"
-                                android:textStyle="bold"
-                                app:layout_constraintBottom_toBottomOf="parent"
-                                app:layout_constraintEnd_toEndOf="parent"
-                                app:layout_constraintTop_toTopOf="parent" />
-                        </androidx.constraintlayout.widget.ConstraintLayout>
-
-                    </LinearLayout>
 
                     <TextView
                         android:id="@+id/textGastgeberInBewerten"
@@ -290,7 +169,6 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="Kontakt" />
-
 
                 </LinearLayout>
 
