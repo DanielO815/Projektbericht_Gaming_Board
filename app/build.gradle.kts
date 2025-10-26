@@ -1,10 +1,18 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
 }
 
+val localProps = Properties().apply {
+    rootProject.file("local.properties").inputStream().use { load(it) }
+}
+val dbName: String = localProps.getProperty("DB_NAME", "")
+
 android {
     namespace = "com.example.boardgame"
     compileSdk = 36
+    buildFeatures{buildConfig=true}
 
     defaultConfig {
         applicationId = "com.example.boardgame"
@@ -14,6 +22,8 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "DB_NAME", "\"$dbName\"")
     }
 
     buildTypes {
@@ -25,6 +35,7 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -32,11 +43,11 @@ android {
 }
 
 dependencies {
-
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
+    implementation(files("libs/mysql-connector-java.jar"))
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
