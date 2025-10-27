@@ -137,8 +137,9 @@
 
                     <RatingBar
                         android:id="@+id/ratingBarGastgeberIn"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content" />
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:numStars="5" />
 
                     <TextView
                         android:id="@+id/textWieWarDasEssen"
@@ -149,7 +150,7 @@
 
                     <RatingBar
                         android:id="@+id/ratingBarEssen"
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content" />
 
                     <TextView
@@ -161,7 +162,7 @@
 
                     <RatingBar
                         android:id="@+id/ratingBar"
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content" />
 
                     <Button
