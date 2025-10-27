@@ -81,10 +81,6 @@ public class MainActivity extends AppCompatActivity {
     private CompletableFuture<String> fetchSpiele(String tabelle,String filterCol,String filterVal,String selectCol) {
 
         CompletableFuture<String> future = new CompletableFuture<>();
-        //String tabelle = "Spieleabend";
-        //String filterCol = "Name";
-        //String filterVal = name;
-        //String selectCol = "Spiele";
 
         executor.execute(() -> {
             String baseUrl = null;
