@@ -1,5 +1,18 @@
 package com.example.boardgame;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
@@ -42,25 +55,6 @@ public class MainActivity extends AppCompatActivity {
 
     private String lastVotedGame = null;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-
-
-
-public class MainActivity extends AppCompatActivity {
 
     private RatingBar ratingBarGastgeberIn;
     private RatingBar ratingBarEssen;
@@ -117,6 +111,37 @@ public class MainActivity extends AppCompatActivity {
                 editTextText.setText("");
             }
         });
+
+
+
+
+        Button button = findViewById(R.id.button2);
+        TextView textView = findViewById(R.id.textViewWannNaechsterTermin);
+        TextView textViewAdress = findViewById(R.id.textViewAdresse);
+
+
+        button.setOnClickListener(v -> {
+            fetchSpiele("Spieleabend","Name","Sebastian","Datum").whenComplete((res,ex) ->
+            {handler.post(() -> {
+                if (ex != null) {
+                    textView.setText("Fehler: " + ex.getMessage());
+                }else{
+                    textView.setText("Datum: " + res);
+                }
+            });
+            });
+            fetchSpiele("Spieleabend","Name","Sebastian","Ort").whenComplete((res,ex) ->
+            {handler.post(() -> {
+                if (ex != null) {
+                    textViewAdress.setText("Fehler: " + ex.getMessage());
+                }else{
+                    textViewAdress.setText("Wo: Sebastian " + res);
+                }
+            });
+            });
+        });
+
+
     }
 
     private void onGameVoted(String selectedGame) {
@@ -191,32 +216,6 @@ public class MainActivity extends AppCompatActivity {
 
             radioGroupSpiele.addView(itemView);
         }
-        Button button = findViewById(R.id.button2);
-        TextView textView = findViewById(R.id.textViewWannNaechsterTermin);
-        TextView textViewAdress = findViewById(R.id.textViewAdresse);
-
-
-        button.setOnClickListener(v -> {
-            fetchSpiele("Spieleabend","Name","Sebastian","Datum").whenComplete((res,ex) ->
-                {handler.post(() -> {
-                    if (ex != null) {
-                        textView.setText("Fehler: " + ex.getMessage());
-                    }else{
-                        textView.setText("Datum: " + res);
-                    }
-                });
-            });
-            fetchSpiele("Spieleabend","Name","Sebastian","Ort").whenComplete((res,ex) ->
-            {handler.post(() -> {
-                if (ex != null) {
-                    textViewAdress.setText("Fehler: " + ex.getMessage());
-                }else{
-                    textViewAdress.setText("Wo: Sebastian " + res);
-                }
-            });
-            });
-        });
-
 
 
 
@@ -227,10 +226,6 @@ public class MainActivity extends AppCompatActivity {
     private CompletableFuture<String> fetchSpiele(String tabelle,String filterCol,String filterVal,String selectCol) {
 
         CompletableFuture<String> future = new CompletableFuture<>();
-        //String tabelle = "Spieleabend";
-        //String filterCol = "Name";
-        //String filterVal = name;
-        //String selectCol = "Spiele";
 
         executor.execute(() -> {
             String baseUrl = null;
@@ -288,7 +283,7 @@ public class MainActivity extends AppCompatActivity {
         return future;
     }
 
-    private void initializeViews() {
+        private void initializeViews() {
         // RatingBars
         ratingBarGastgeberIn = findViewById(R.id.ratingBarGastgeberIn);
         ratingBarEssen = findViewById(R.id.ratingBarEssen);
