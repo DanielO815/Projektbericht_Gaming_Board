@@ -23,6 +23,7 @@ import org.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -32,8 +33,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-
+import java.util.function.Consumer;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -80,7 +80,33 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
             });
-            getCompleteTableAsync("Spieleabend2")
+            //----------Insert--------------
+            JSONObject valsInsert = new JSONObject();
+            try {
+                valsInsert.put("Name", "Max");
+                valsInsert.put("Ort", "Mannheimerstr 14");
+                valsInsert.put("Datum", "2023-08-15");
+                valsInsert.put("Spiele", "COD");
+                valsInsert.put("Essen", "Hamburger");
+            } catch (JSONException ignored) {}
+
+            insertRow("Spieleabend", valsInsert).whenComplete((res, ex) -> {
+
+            });
+
+            //----------Update--------------
+            JSONObject valsUpdate = new JSONObject();
+            try {
+                valsUpdate.put("Ort", "xxx");
+            } catch (JSONException ignored) {}
+
+            updateRow("Spieleabend", valsUpdate, "Name", "Sebastian").whenComplete((res, ex) -> {
+
+            });
+
+
+
+           /* getCompleteTableAsync("Spieleabend2")
                     .thenAccept(list -> {
                         // läuft im executor-Thread -> UI-Updates auf Main-Thread
                         runOnUiThread(() -> {
@@ -98,9 +124,136 @@ public class MainActivity extends AppCompatActivity {
                         runOnUiThread(() -> Toast.makeText(this, "Fehler: " + ex.getMessage(), Toast.LENGTH_LONG).show());
                         return null;
                     });
-
+            */
         });
     }
+
+
+    private CompletableFuture<String> updateRow(String tabelle, JSONObject values, String whereKey, Object whereValue) {
+        CompletableFuture<String> future = new CompletableFuture<>();
+
+        executor.execute(() -> {
+            String baseUrl = "http://10.0.2.2:3000/update";
+            HttpURLConnection conn = null;
+            try {
+                JSONObject where = new JSONObject();
+                where.put("key", whereKey);
+                // whereValue kann Number, Boolean oder String sein
+                if (whereValue instanceof Number) where.put("value", ((Number) whereValue).longValue());
+                else if (whereValue instanceof Boolean) where.put("value", (Boolean) whereValue);
+                else where.put("value", String.valueOf(whereValue));
+
+                JSONObject body = new JSONObject();
+                body.put("table", tabelle);
+                body.put("values", values);
+                body.put("where", where);
+
+                URL url = new URL(baseUrl);
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("PUT");
+                conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+                conn.setConnectTimeout(10000);
+                conn.setReadTimeout(10000);
+                conn.setDoOutput(true);
+
+                try (OutputStream os = conn.getOutputStream()) {
+                    byte[] input = body.toString().getBytes("utf-8");
+                    os.write(input, 0, input.length);
+                }
+
+                int code = conn.getResponseCode();
+                InputStream is = (code >= 200 && code < 300) ? conn.getInputStream() : conn.getErrorStream();
+                BufferedReader br = new BufferedReader(new InputStreamReader(is, "utf-8"));
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while ((line = br.readLine()) != null) sb.append(line);
+                br.close();
+
+                String result = sb.toString();
+
+                try {
+                    JSONObject resp = new JSONObject(result);
+                    if (resp.has("affected")) {
+                        future.complete("Affected rows: " + resp.optInt("affected", 0));
+                    } else if (resp.has("error")) {
+                        future.complete("Serverfehler: " + resp.optString("error"));
+                    } else {
+                        future.complete(result);
+                    }
+                } catch (JSONException e) {
+                    future.complete("Parsefehler");
+                }
+
+            } catch (Exception e) {
+                future.completeExceptionally(e);
+            } finally {
+                if (conn != null) conn.disconnect();
+            }
+        });
+
+        return future;
+    }
+
+
+
+    private CompletableFuture<String> insertRow(String tabelle, JSONObject values) {
+        CompletableFuture<String> future = new CompletableFuture<>();
+
+        executor.execute(() -> {
+            String baseUrl = "http://10.0.2.2:3000/insert";
+            HttpURLConnection conn = null;
+            try {
+                JSONObject body = new JSONObject();
+                body.put("table", tabelle);
+                body.put("values", values);
+
+                URL url = new URL(baseUrl);
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+                conn.setConnectTimeout(10000);
+                conn.setReadTimeout(10000);
+                conn.setDoOutput(true);
+
+                try (OutputStream os = conn.getOutputStream()) {
+                    byte[] input = body.toString().getBytes("utf-8");
+                    os.write(input, 0, input.length);
+                }
+
+                int code = conn.getResponseCode();
+                InputStream is = (code >= 200 && code < 300) ? conn.getInputStream() : conn.getErrorStream();
+                BufferedReader br = new BufferedReader(new InputStreamReader(is, "utf-8"));
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while ((line = br.readLine()) != null) sb.append(line);
+                br.close();
+
+                String result = sb.toString();
+
+                try {
+                    JSONObject resp = new JSONObject(result);
+                    if (resp.has("insertedId")) {
+                        future.complete("InsertedId: " + resp.optString("insertedId", "null"));
+                    } else if (resp.has("error")) {
+                        future.complete("Serverfehler: " + resp.optString("error"));
+                    } else {
+                        future.complete(result);
+                    }
+                } catch (JSONException e) {
+                    future.complete("Parsefehler");
+                }
+
+            } catch (Exception e) {
+                future.completeExceptionally(e);
+            } finally {
+                if (conn != null) conn.disconnect();
+            }
+        });
+
+        return future;
+    }
+
+
 
 
     // in MainActivity.java (ExecutorService + HttpURLConnection)
