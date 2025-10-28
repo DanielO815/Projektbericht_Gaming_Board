@@ -9,6 +9,10 @@
 /.idea/assetWizardSettings.xml
 .DS_Store
 /build
+/backend/node_modules
+.env
+package.json
+package-lock.json
 /captures
 .externalNativeBuild
 .cxx
