@@ -56,5 +56,30 @@ app.get('/getColumn', async (req, res) => {
 
 });
 
+// Helper: sichere Query-Ausführung (öffnet und schließt Verbindung)
+async function executeQuery(query, inputs = []) {
+  try {
+    const pool = await sql.connect(config);
+    const req = pool.request();
+    for (const inp of inputs) req.input(inp.name, inp.type, inp.value);
+    const result = await req.query(query);
+    return result.recordset;
+  } finally {
+    try { await sql.close(); } catch (e) {}
+  }
+}
+
+app.get('/completeTable', async (req, res) => {
+  const table = req.query.table || '';
+  const query = `SELECT * FROM dbo.${table}`;
+  try {
+    const rows = await executeQuery(query);
+    return res.json(rows);
+  } catch (err) {
+    console.error('DB-Error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`Server läuft auf http://localhost:${port}`));
