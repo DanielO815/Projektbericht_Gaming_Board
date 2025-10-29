@@ -15,8 +15,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import android.content.Context;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -26,26 +27,18 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
-import android.widget.TextView;
-import android.widget.Toast;
 import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.os.Handler;
-import android.os.Looper;
-import android.widget.Button;
-import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -63,16 +56,6 @@ public class MainActivity extends AppCompatActivity {
 
     // Map, die jede Termin-ID auf ihre ZULETZT GEWÄHLTE STIMME abbildet
     final HashMap<String, String> mapLastVotedGame = new HashMap<>();
-
-
-    // bewertung gastgeberIn essen abend
-    private RatingBar ratingBarGastgeberIn;
-    private RatingBar ratingBarEssen;
-    private RatingBar ratingBarAbend;
-
-    private TextView textGastgeberInBewerten;
-    private TextView textWieWarDasEssen;
-    private TextView textWieWarDerAbend;
 
 
     ExecutorService executor = Executors.newSingleThreadExecutor();
