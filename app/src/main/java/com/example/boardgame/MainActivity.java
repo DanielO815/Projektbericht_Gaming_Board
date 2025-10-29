@@ -227,6 +227,142 @@ public class MainActivity extends AppCompatActivity {
             });
 
 
+            // RatingBars
+            final RatingBar cardRatingBarGastgeberIn = itemView.findViewById(R.id.ratingBarGastgeberIn);
+            final RatingBar cardRatingBarEssen = itemView.findViewById(R.id.ratingBarEssen);
+            final RatingBar cardRatingBarAbend = itemView.findViewById(R.id.ratingBar);
+
+            // Zugehörige TextViews (zum Aktualisieren der Feedback-Texte)
+            final TextView cardTextGastgeberInBewerten = itemView.findViewById(R.id.textGastgeberInBewerten);
+            final TextView cardTextWieWarDasEssen = itemView.findViewById(R.id.textWieWarDasEssen);
+            final TextView cardTextWieWarDerAbend = itemView.findViewById(R.id.textWieWarDerAbend);
+
+
+            // Lade existierenden Ratings aus der DB
+            fetchSpiele("Spieleabend2", "Id", terminID, "EssenSterne").whenComplete((essenSterneStr, exEssen) -> {
+                fetchSpiele("Spieleabend2", "Id", terminID, "GastgeberSterne").whenComplete((gastgeberSterneStr, exGastgeber) -> {
+                    fetchSpiele("Spieleabend2", "Id", terminID, "AbendSterne").whenComplete((abendSterneStr, exAbend) -> {
+
+                        handler.post(() -> {
+
+                            // Anfangswerte setzen aus der DB geladen
+                            try {
+                                if (exEssen == null && essenSterneStr != null && !essenSterneStr.isEmpty() && !essenSterneStr.equals("Keine Einträge")) {
+                                    cardRatingBarEssen.setRating(Float.parseFloat(essenSterneStr));
+                                } else {
+                                    cardRatingBarEssen.setRating(0);
+                                }
+
+                                if (exGastgeber == null && gastgeberSterneStr != null && !gastgeberSterneStr.isEmpty() && !gastgeberSterneStr.equals("Keine Einträge")) {
+                                    cardRatingBarGastgeberIn.setRating(Float.parseFloat(gastgeberSterneStr));
+                                } else {
+                                    cardRatingBarGastgeberIn.setRating(0);
+                                }
+
+                                if (exAbend == null && abendSterneStr != null && !abendSterneStr.isEmpty() && !abendSterneStr.equals("Keine Einträge")) {
+                                    cardRatingBarAbend.setRating(Float.parseFloat(abendSterneStr));
+                                } else {
+                                    cardRatingBarAbend.setRating(0);
+                                }
+
+                            } catch (NumberFormatException e) {
+                                Log.e("RatingLoad", "Fehler beim Parsen der Sterne-Strings für TerminID: " + terminID, e);
+                                cardRatingBarEssen.setRating(0);
+                                cardRatingBarGastgeberIn.setRating(0);
+                                cardRatingBarAbend.setRating(0);
+                            }
+
+
+                            // Listener hinzufügen
+                            // Essen Rating
+                            cardRatingBarEssen.setOnRatingBarChangeListener(new RatingBar.OnRatingBarChangeListener() {
+                                @Override
+                                public void onRatingChanged(RatingBar ratingBar, float rating, boolean fromUser) {
+                                    if (fromUser) {
+                                        String feedback;
+                                        if (rating == 5.0f) {
+                                            feedback = "Kulinarisch 1A! 🍽️";
+                                        } else if (rating >= 4.0f) {
+                                            feedback = "Sehr lecker, gerne wieder!";
+                                        } else if (rating >= 2.5f) {
+                                            feedback = "War okay.";
+                                        } else {
+                                            feedback = "Das nächste mal gerne wo anders bestellen!";
+                                        }
+
+                                        cardTextWieWarDasEssen.setText(feedback);
+                                        Toast.makeText(MainActivity.this, feedback, Toast.LENGTH_SHORT).show();
+
+                                        // TODO--- DATENBANK (SCHREIBEN / UPDATE) ---
+                                        // Speichere die Bewertung für diesen 'terminID'
+                                        // z.B. updateRatingInDB(terminID, "EssenSterne", rating);
+                                    }
+                                }
+                            });
+
+                            // Gastgeber Rating
+                            cardRatingBarGastgeberIn.setOnRatingBarChangeListener(new RatingBar.OnRatingBarChangeListener() {
+                                @Override
+                                public void onRatingChanged(RatingBar ratingBar, float rating, boolean fromUser) {
+                                    if (fromUser) {
+                                        String feedback;
+                                        if (rating == 5.0f) {
+                                            feedback = "Absolut perfekte Gastgeber:in! ✨";
+                                        } else if (rating >= 4.0f) {
+                                            feedback = "Tolle Gastgeber:in!";
+                                        } else if (rating >= 3.0f) {
+                                            feedback = "Gute Erfahrung. Danke!";
+                                        } else {
+                                            feedback = "Da ist noch Luft nach oben.";
+                                        }
+
+                                        cardTextGastgeberInBewerten.setText(feedback);
+                                        Toast.makeText(MainActivity.this, feedback, Toast.LENGTH_SHORT).show();
+
+                                        // TODO--- DATENBANK (SCHREIBEN / UPDATE) ---
+                                        // z.B. updateRatingInDB(terminID, "GastgeberSterne", rating);
+                                    }
+                                }
+                            });
+
+                            // Abend Rating
+                            cardRatingBarAbend.setOnRatingBarChangeListener(new RatingBar.OnRatingBarChangeListener() {
+                                @Override
+                                public void onRatingChanged(RatingBar ratingBar, float rating, boolean fromUser) {
+                                    if (fromUser) {
+                                        String feedback;
+                                        if (rating == 5.0f) {
+                                            feedback = "Ein perfekter Spieleabend! 🎲";
+                                        } else if (rating >= 4.0f) {
+                                            feedback = "Ein sehr guter Spieleabend!";
+                                        } else if (rating >= 3.0f) {
+                                            feedback = "Guter Abend.";
+                                        } else {
+                                            feedback = "Da ist noch Potenzial.";
+                                        }
+
+                                        cardTextWieWarDerAbend.setText(feedback);
+                                        Toast.makeText(MainActivity.this, feedback, Toast.LENGTH_SHORT).show();
+
+                                        // TODO--- DATENBANK (SCHREIBEN / UPDATE) ---
+                                        // z.B. updateRatingInDB(terminID, "AbendSterne", rating);
+                                    }
+                                }
+                            });
+
+                        });
+                    });
+                });
+            });
+
+
+
+
+
+
+
+
+
             // VORSCHLAGS-LOGIK
             // TODO--- DATENBANK (LESEN) ---
             // Lade alle Vorschläge aus 'SpielVorschlaege' WHERE Spieleabend_Id = terminID
@@ -406,6 +542,7 @@ public class MainActivity extends AppCompatActivity {
 
                     textGastgeberInBewerten.setText(feedback);
                     Toast.makeText(MainActivity.this, feedback, Toast.LENGTH_SHORT).show();
+                    // TODO--- DATENBANK (SCHREIBEN / UPDATE) ---
                     // Speichere die Bewertung in Datenbank: saveRating("gastgeber", rating);
                 }
             }
