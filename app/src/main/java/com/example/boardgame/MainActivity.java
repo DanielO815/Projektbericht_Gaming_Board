@@ -21,11 +21,14 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -49,19 +52,6 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.RatingBar;
-import android.widget.TextView;
-import android.widget.Toast;
-import android.os.Handler;
-import android.os.Looper;
-import android.widget.Button;
-import android.widget.TextView;
-
-import androidx.activity.EdgeToEdge;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.constraintlayout.widget.ConstraintLayout;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -100,13 +90,13 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         // View ini
-        initializeViews();
+        /*initializeViews();
 
         //  Logik der Ratingbar
         setupGastgeberRating();
         setupEssenRating();
         setupAbendRating();
-
+        */
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -120,7 +110,7 @@ public class MainActivity extends AppCompatActivity {
 
         // TODO--- DATENBANK (LESEN) und falls Einträge vorhanden, liste befüllen und aktuallisieren
 
-
+        /*
         buttonVorschlagEingeben.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -133,12 +123,12 @@ public class MainActivity extends AppCompatActivity {
 
                     // TODO--- DATENBANK (SCHREIBEN / INSERT) ---
 
-                    updatePollUI();
+                    //updatePollUI();
                 }
                 editTextText.setText("");
             }
         });
-
+        */
 
 
 
@@ -172,7 +162,7 @@ public class MainActivity extends AppCompatActivity {
                 valsInsert.put("Name", "Max");
                 valsInsert.put("Ort", "Mannheimerstr 14");
                 valsInsert.put("Datum", "2023-08-15");
-                valsInsert.put("Spiele", "COD");
+                valsInsert.put("Spiele", "COD2");
                 valsInsert.put("Essen", "Hamburger");
             } catch (JSONException ignored) {}
 
@@ -288,12 +278,13 @@ public class MainActivity extends AppCompatActivity {
         executor.execute(() -> {
             String baseUrl = "http://10.0.2.2:3000/insert";
             HttpURLConnection conn = null;
+
+            JSONObject body = new JSONObject();
             try {
-                JSONObject body = new JSONObject();
                 body.put("table", tabelle);
                 body.put("values", values);
-
                 URL url = new URL(baseUrl);
+
                 conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
@@ -301,86 +292,11 @@ public class MainActivity extends AppCompatActivity {
                 conn.setReadTimeout(10000);
                 conn.setDoOutput(true);
 
+
                 try (OutputStream os = conn.getOutputStream()) {
                     byte[] input = body.toString().getBytes("utf-8");
                     os.write(input, 0, input.length);
                 }
-    }
-
-    private void onGameVoted(String selectedGame) {
-
-        // TODO--- DATENBANK (AKTUALISIEREN / UPDATE) ---
-
-        if (lastVotedGame != null && lastVotedGame.equals(selectedGame)) {
-            lastVotedGame = null;
-            int currentVotes = gameVotes.get(selectedGame);
-            if (currentVotes > 0) {
-                gameVotes.put(selectedGame, currentVotes - 1);
-
-                // TODO--- DB-AUFRUF: Melde die entfernte Stimme
-            }
-            updatePollUI();
-            return;
-        }
-
-        if (lastVotedGame != null && gameVotes.containsKey(lastVotedGame)) {
-            int oldVotes = gameVotes.get(lastVotedGame);
-            if (oldVotes > 0) {
-                gameVotes.put(lastVotedGame, oldVotes - 1);
-
-                // TODO--- DB-AUFRUF: Melde die entfernte Stimme vom alten Spiel
-            }
-        }
-
-        int currentVotes = gameVotes.get(selectedGame);
-        gameVotes.put(selectedGame, currentVotes + 1);
-        lastVotedGame = selectedGame; // Auswahl speichern
-
-        // TODO--- DB-AUFRUF: Melde die hinzugefügte Stimme für das neue Spiel
-
-        updatePollUI();
-    }
-
-
-    private void updatePollUI() {
-        radioGroupSpiele.removeAllViews();
-
-        LayoutInflater inflater = LayoutInflater.from(this);
-
-        int totalVotes = 0;
-        for (int votes : gameVotes.values()) {
-            totalVotes += votes;
-        }
-
-        for (String spiel : listeSpielVerschlaege) {
-
-            View itemView = inflater.inflate(R.layout.poll_item, radioGroupSpiele, false);
-
-            RadioButton radioButton = itemView.findViewById(R.id.poll_radio_button);
-            ProgressBar progressBar = itemView.findViewById(R.id.poll_progress_bar);
-            TextView voteCount = itemView.findViewById(R.id.poll_vote_count);
-
-            int votes = gameVotes.get(spiel);
-            radioButton.setText(spiel);
-            voteCount.setText(String.valueOf(votes));
-
-            if (totalVotes > 0) {
-                int progress = (int) (((double) votes / totalVotes) * 100);
-                progressBar.setProgress(progress);
-            } else {
-                progressBar.setProgress(0);
-            }
-
-            radioButton.setChecked(spiel.equals(lastVotedGame));
-
-            radioButton.setOnClickListener(v -> {
-                onGameVoted(spiel);
-            });
-
-            radioGroupSpiele.addView(itemView);
-        }
-
-
                 int code = conn.getResponseCode();
                 InputStream is = (code >= 200 && code < 300) ? conn.getInputStream() : conn.getErrorStream();
                 BufferedReader br = new BufferedReader(new InputStreamReader(is, "utf-8"));
@@ -410,7 +326,6 @@ public class MainActivity extends AppCompatActivity {
                 if (conn != null) conn.disconnect();
             }
         });
-
         return future;
     }
 
@@ -546,6 +461,7 @@ public class MainActivity extends AppCompatActivity {
 
 }
 
+/*
         private void initializeViews() {
         // RatingBars
         ratingBarGastgeberIn = findViewById(R.id.ratingBarGastgeberIn);
@@ -633,3 +549,4 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 }
+*/
