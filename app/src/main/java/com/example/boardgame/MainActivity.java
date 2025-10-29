@@ -47,15 +47,19 @@ import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
+    // card view auslagern
+    final ArrayList<String> listeDatenInDatenbank = new ArrayList<>();
+    private LinearLayout putCardViewLayoutHereInside;
+
+    // spiele vorschlagen und voten
     final ArrayList<String> listeSpielVerschlaege = new ArrayList<>();
     final HashMap<String, Integer> gameVotes = new HashMap<>();
-
     private RadioGroup radioGroupSpiele;
     private EditText editTextText;
-
     private String lastVotedGame = null;
 
 
+    // bewertung gastgeberIn essen abend
     private RatingBar ratingBarGastgeberIn;
     private RatingBar ratingBarEssen;
     private RatingBar ratingBarAbend;
@@ -64,6 +68,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView textWieWarDasEssen;
     private TextView textWieWarDerAbend;
 
+
     ExecutorService executor = Executors.newSingleThreadExecutor();
     Handler handler = new Handler(Looper.getMainLooper());
     @Override
@@ -71,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
-
+/*
         // View ini
         initializeViews();
 
@@ -79,7 +84,7 @@ public class MainActivity extends AppCompatActivity {
         setupGastgeberRating();
         setupEssenRating();
         setupAbendRating();
-
+*/
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -87,40 +92,24 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-        editTextText = findViewById(R.id.editTextText);
-        final Button buttonVorschlagEingeben = findViewById(R.id.buttonVorschlagEingeben);
-        radioGroupSpiele = findViewById(R.id.radioGroupSpiele);
 
-        // TODO--- DATENBANK (LESEN) und falls Einträge vorhanden, liste befüllen und aktuallisieren
+        // initialisieren des Card View Elements
+        putCardViewLayoutHereInside = findViewById(R.id.putCardViewLayoutHereInside);
 
 
-        buttonVorschlagEingeben.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String eingabe = editTextText.getText().toString().trim();
-
-                if (!eingabe.isEmpty() && !listeSpielVerschlaege.contains(eingabe)) {
-
-                    listeSpielVerschlaege.add(eingabe);
-                    gameVotes.put(eingabe, 0);
-
-                    // TODO--- DATENBANK (SCHREIBEN / INSERT) ---
-
-                    updatePollUI();
-                }
-                editTextText.setText("");
-            }
-        });
 
 
 
 
         Button button = findViewById(R.id.button2);
-        TextView textView = findViewById(R.id.textViewWannNaechsterTermin);
-        TextView textViewAdress = findViewById(R.id.textViewAdresse);
+        // TextView textView = findViewById(R.id.textViewWannNaechsterTermin);
+        // TextView textViewAdress = findViewById(R.id.textViewAdresse);
 
 
         button.setOnClickListener(v -> {
+
+            createCardForDate();
+/*
             fetchSpiele("Spieleabend","Name","Sebastian","Datum").whenComplete((res,ex) ->
             {handler.post(() -> {
                 if (ex != null) {
@@ -138,8 +127,16 @@ public class MainActivity extends AppCompatActivity {
                     textViewAdress.setText("Wo: Sebastian " + res);
                 }
             });
-            });
+            }); */
         });
+
+
+        // Testing add some stuff to listeDatenInDatenbank
+        listeDatenInDatenbank.add("TerminDatumEins");
+        listeDatenInDatenbank.add("Zweites Termindatum");
+        listeDatenInDatenbank.add("Drittes Termindatum ");
+        listeDatenInDatenbank.add("Viertes Termindatum");
+
 
 
     }
@@ -176,6 +173,65 @@ public class MainActivity extends AppCompatActivity {
         // TODO--- DB-AUFRUF: Melde die hinzugefügte Stimme für das neue Spiel
 
         updatePollUI();
+    }
+
+    private void createCardForDate() {
+
+        // putCardViewLayoutHereInside.removeView(putCardViewLayoutHereInside(R.layout.cardview_per_date_item));
+        putCardViewLayoutHereInside.removeAllViews();
+
+        LayoutInflater inflater = LayoutInflater.from(this);
+
+
+        for (String termin : listeDatenInDatenbank) {
+
+            View itemView = inflater.inflate(R.layout.cardview_per_date_item, putCardViewLayoutHereInside, false);
+
+            TextView textViewDate = itemView.findViewById(R.id.textViewWannNaechsterTermin);
+
+            textViewDate.setText(termin);
+
+
+
+            editTextText = itemView.findViewById(R.id.editTextText);
+            final Button buttonVorschlagEingeben = itemView.findViewById(R.id.buttonVorschlagEingeben);
+            radioGroupSpiele = itemView.findViewById(R.id.radioGroupSpiele);
+
+            // TODO--- DATENBANK (LESEN) und falls Einträge vorhanden, liste befüllen und aktuallisieren
+
+
+            buttonVorschlagEingeben.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    String eingabe = editTextText.getText().toString().trim();
+
+                    if (!eingabe.isEmpty() && !listeSpielVerschlaege.contains(eingabe)) {
+
+                        listeSpielVerschlaege.add(eingabe);
+                        gameVotes.put(eingabe, 0);
+
+                        // TODO--- DATENBANK (SCHREIBEN / INSERT) ---
+
+                        updatePollUI();
+                    }
+                    editTextText.setText("");
+                }
+            });
+
+
+
+
+
+
+
+
+            // add new created Card
+            putCardViewLayoutHereInside.addView(itemView);
+
+
+        }
+
+
     }
 
 
@@ -282,7 +338,7 @@ public class MainActivity extends AppCompatActivity {
         });
         return future;
     }
-
+/*
         private void initializeViews() {
         // RatingBars
         ratingBarGastgeberIn = findViewById(R.id.ratingBarGastgeberIn);
@@ -368,5 +424,5 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
-    }
+    } */
 }

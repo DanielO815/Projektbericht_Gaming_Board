@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/cardView"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="16dp"
+    android:layout_marginEnd="16dp"
+    android:layout_marginBottom="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+
+            <TextView
+                android:id="@+id/textViewWannNaechsterTermin"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Datum: 01.11.2025" />
+
+            <TextView
+                android:id="@+id/textViewAdresse"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Wo: MitspielerEins, Beispielstrasse 7, 80000 Musterort" />
+
+
+            <TextView
+                android:id="@+id/textVorschlagSpiele"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:labelFor="@+id/editTextText"
+                android:text="Spiele vorschalgen:" />
+
+
+            <EditText
+                android:id="@+id/editTextText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:autofillHints="Spiel Name eingeben"
+                android:ems="10"
+                android:hint="Gewünschtes Spiel"
+                android:inputType="text"
+                android:text="" />
+
+            <Button
+                android:id="@+id/buttonVorschlagEingeben"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Spielvorschlag hinzufügen" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/vorgeschlageneSpieleAbstimmen"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Abstimmen über vorgeschlagene Spiele:" />
+
+
+                <RadioGroup
+                    android:id="@+id/radioGroupSpiele"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingTop="8dp" />
+
+
+            </LinearLayout>
+
+
+
+
+
+
+            <TextView
+                android:id="@+id/textGastgeberInBewerten"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Bitte Gastgeber:in bewerten:" />
+
+            <RatingBar
+                android:id="@+id/ratingBarGastgeberIn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:numStars="5" />
+
+            <TextView
+                android:id="@+id/textWieWarDasEssen"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Wie war das Essen?" />
+
+            <RatingBar
+                android:id="@+id/ratingBarEssen"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:id="@+id/textWieWarDerAbend"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Wie war der Abend?" />
+
+            <RatingBar
+                android:id="@+id/ratingBar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <Button
+                android:id="@+id/buttonKontakt"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Kontakt" />
+
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
