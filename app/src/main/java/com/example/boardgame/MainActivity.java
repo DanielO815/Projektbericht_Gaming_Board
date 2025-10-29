@@ -1,4 +1,5 @@
 package com.example.boardgame;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -13,6 +14,7 @@ import java.net.URLEncoder;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
 import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
@@ -47,16 +49,20 @@ import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
-    // card view auslagern
-    final ArrayList<String> listeDatenInDatenbank = new ArrayList<>();
     private LinearLayout putCardViewLayoutHereInside;
 
-    // spiele vorschlagen und voten
-    final ArrayList<String> listeSpielVerschlaege = new ArrayList<>();
-    final HashMap<String, Integer> gameVotes = new HashMap<>();
-    private RadioGroup radioGroupSpiele;
-    private EditText editTextText;
-    private String lastVotedGame = null;
+    // DB-IDs als Key
+    // Liste aller Termin-IDs
+    final ArrayList<String> terminIDs = new ArrayList<>();
+
+    // Map, die jede Termin-ID (als String) auf ihre VORSCHLAGSLISTE abbildet
+    final HashMap<String, ArrayList<String>> listenSpielVorschlaege = new HashMap<>();
+
+    // Map, die jede Termin-ID auf ihre VOTING-MAP abbildet
+    final HashMap<String, HashMap<String, Integer>> mapGameVotes = new HashMap<>();
+
+    // Map, die jede Termin-ID auf ihre ZULETZT GEWÄHLTE STIMME abbildet
+    final HashMap<String, String> mapLastVotedGame = new HashMap<>();
 
 
     // bewertung gastgeberIn essen abend
@@ -71,20 +77,12 @@ public class MainActivity extends AppCompatActivity {
 
     ExecutorService executor = Executors.newSingleThreadExecutor();
     Handler handler = new Handler(Looper.getMainLooper());
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
-/*
-        // View ini
-        initializeViews();
-
-        //  Logik der Ratingbar
-        setupGastgeberRating();
-        setupEssenRating();
-        setupAbendRating();
-*/
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -92,160 +90,200 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-
-        // initialisieren des Card View Elements
         putCardViewLayoutHereInside = findViewById(R.id.putCardViewLayoutHereInside);
 
-
-
-
-
-
         Button button = findViewById(R.id.button2);
-        // TextView textView = findViewById(R.id.textViewWannNaechsterTermin);
-        // TextView textViewAdress = findViewById(R.id.textViewAdresse);
-
-
         button.setOnClickListener(v -> {
-
+            // Lade die Karten basierend auf den Daten
+            // In einer echten App: Hier zuerst die terminIDs aus der DB laden!
             createCardForDate();
-/*
-            fetchSpiele("Spieleabend","Name","Sebastian","Datum").whenComplete((res,ex) ->
-            {handler.post(() -> {
-                if (ex != null) {
-                    textView.setText("Fehler: " + ex.getMessage());
-                }else{
-                    textView.setText("Datum: " + res);
-                }
-            });
-            });
-            fetchSpiele("Spieleabend","Name","Sebastian","Ort").whenComplete((res,ex) ->
-            {handler.post(() -> {
-                if (ex != null) {
-                    textViewAdress.setText("Fehler: " + ex.getMessage());
-                }else{
-                    textViewAdress.setText("Wo: Sebastian " + res);
-                }
-            });
-            }); */
         });
 
 
-        // Testing add some stuff to listeDatenInDatenbank
-        listeDatenInDatenbank.add("TerminDatumEins");
-        listeDatenInDatenbank.add("Zweites Termindatum");
-        listeDatenInDatenbank.add("Drittes Termindatum ");
-        listeDatenInDatenbank.add("Viertes Termindatum");
+        // DATENBANK-SIMULATION FÜR TESTS
+        // TODO--- DATENBANK (LESEN) ---
+        // Lade alle Termine aus der DB Tabelle Spielabend2, um Liste 'terminIDs' zu füllen.
+        if (terminIDs.isEmpty()) {
+            terminIDs.add("1"); // Entspricht Id=1 in Tabelle Spieleabend2
+            terminIDs.add("2"); // Entspricht Id=2 in Tabelle Spieleabend2
+            terminIDs.add("3"); // Entspricht Id=3 in Tabelle Spieleabend2
+        }
 
 
-
+        // Initialisiert die Datenstrukturen für jeden Termin-Key in der Liste 'terminIDs'
+        // TODO--- Daten aus Tabell SpielVorschlaege laden
+        //
+        for (String terminID : terminIDs) {
+            if (!listenSpielVorschlaege.containsKey(terminID)) {
+                listenSpielVorschlaege.put(terminID, new ArrayList<>());
+                mapGameVotes.put(terminID, new HashMap<>());
+                mapLastVotedGame.put(terminID, null);
+            }
+        }
+        // Testdaten für den ersten Termin (Id="1") hinzufügen
+        // Sollte aus der DB Tabelle SpielVorschlaege geladen werden
+        ArrayList<String> vorschlaege1 = listenSpielVorschlaege.get("1");
+        if (vorschlaege1.isEmpty()) {
+            vorschlaege1.add("Monopoly");
+            mapGameVotes.get("1").put("Monopoly", 2); // Simuliert 2 Stimmen
+            vorschlaege1.add("UNO");
+            mapGameVotes.get("1").put("UNO", 0); // Simuliert keine Stimme
+        }
+        ArrayList<String> vorschlaege2 = listenSpielVorschlaege.get("2");
+        if (vorschlaege2.isEmpty()) {
+            vorschlaege2.add("Uno");
+            mapGameVotes.get("2").put("Uno", 1); // Simuliert 1 Stimme
+            vorschlaege2.add("Berttspiel 123");
+            mapGameVotes.get("2").put("Berttspiel 123", 2); // Simuliert 2 Stimmen
+        }
+        ArrayList<String> vorschlaege3 = listenSpielVorschlaege.get("3");
+        if (vorschlaege3.isEmpty()) {
+            vorschlaege3.add("Uno");
+            mapGameVotes.get("3").put("Uno", 0); // Simuliert keine Stimme
+            vorschlaege3.add("Berttspiel 123");
+            mapGameVotes.get("3").put("Berttspiel 123", 0); // Simuliert keine Stimmen
+            vorschlaege3.add("Monopoly");
+            mapGameVotes.get("3").put("Monopoly", 3); // Simuliert 3 Stimmen
+            vorschlaege3.add("Brettspiel 42");
+            mapGameVotes.get("3").put("Brettspiel 42", 0); // Simuliert keine Stimmen
+        }
     }
 
-    private void onGameVoted(String selectedGame) {
 
-        // TODO--- DATENBANK (AKTUALISIEREN / UPDATE) ---
+    // Verarbeitet einen Klick auf ein Spielvorschlag (eine Abstimmung).
+    private void onGameVoted(String terminID, String selectedGame, RadioGroup radioGroupSpiele) {
+
+        // TODO--- DATENBANK (SCHREIBEN / UPDATE) ---
+        // 'UPDATE SpielVorschlaege SET StimmenAnzahl = ... WHERE Spieleabend_Id = terminID AND SpielName = selectedGame'
+        // + (Logik zum Zählen der Stimmen)
+
+        HashMap<String, Integer> gameVotes = mapGameVotes.get(terminID);
+        String lastVotedGame = mapLastVotedGame.get(terminID);
 
         if (lastVotedGame != null && lastVotedGame.equals(selectedGame)) {
             lastVotedGame = null;
-            int currentVotes = gameVotes.get(selectedGame);
+            int currentVotes = gameVotes.getOrDefault(selectedGame, 0);
             if (currentVotes > 0) {
                 gameVotes.put(selectedGame, currentVotes - 1);
-
-                // TODO--- DB-AUFRUF: Melde die entfernte Stimme
+                // TODO: DB-Update (Stimme entfernen)
             }
-            updatePollUI();
-            return;
+
+        } else {
+            if (lastVotedGame != null && gameVotes.containsKey(lastVotedGame)) {
+                int oldVotes = gameVotes.getOrDefault(lastVotedGame, 0);
+                if (oldVotes > 0) {
+                    gameVotes.put(lastVotedGame, oldVotes - 1);
+                    // TODO: DB-Update (Alte Stimme entfernen)
+                }
+            }
+            int currentVotes = gameVotes.getOrDefault(selectedGame, 0);
+            gameVotes.put(selectedGame, currentVotes + 1);
+            lastVotedGame = selectedGame;
+            // TODO: DB-Update (Neue Stimme hinzufügen)
         }
 
-        if (lastVotedGame != null && gameVotes.containsKey(lastVotedGame)) {
-            int oldVotes = gameVotes.get(lastVotedGame);
-            if (oldVotes > 0) {
-                gameVotes.put(lastVotedGame, oldVotes - 1);
-
-                // TODO--- DB-AUFRUF: Melde die entfernte Stimme vom alten Spiel
-            }
-        }
-
-        int currentVotes = gameVotes.get(selectedGame);
-        gameVotes.put(selectedGame, currentVotes + 1);
-        lastVotedGame = selectedGame; // Auswahl speichern
-
-        // TODO--- DB-AUFRUF: Melde die hinzugefügte Stimme für das neue Spiel
-
-        updatePollUI();
+        mapLastVotedGame.put(terminID, lastVotedGame);
+        updatePollUI(radioGroupSpiele, terminID);
     }
 
+    // Erstellt Kartenansichten basierend auf den 'terminIDs'
     private void createCardForDate() {
 
-        // putCardViewLayoutHereInside.removeView(putCardViewLayoutHereInside(R.layout.cardview_per_date_item));
         putCardViewLayoutHereInside.removeAllViews();
-
         LayoutInflater inflater = LayoutInflater.from(this);
 
-
-        for (String termin : listeDatenInDatenbank) {
+        // Iteriere über die terminIDs Liste
+        for (final String terminID : terminIDs) {
 
             View itemView = inflater.inflate(R.layout.cardview_per_date_item, putCardViewLayoutHereInside, false);
 
-            TextView textViewDate = itemView.findViewById(R.id.textViewWannNaechsterTermin);
-
-            textViewDate.setText(termin);
-
-
-
-            editTextText = itemView.findViewById(R.id.editTextText);
+            // Elemente der Karte finden
+            final TextView textViewDate = itemView.findViewById(R.id.textViewWannNaechsterTermin);
+            final TextView textViewAddress = itemView.findViewById(R.id.textViewAdresse);
+            final EditText localEditTextText = itemView.findViewById(R.id.editTextText);
             final Button buttonVorschlagEingeben = itemView.findViewById(R.id.buttonVorschlagEingeben);
-            radioGroupSpiele = itemView.findViewById(R.id.radioGroupSpiele);
+            final RadioGroup localRadioGroupSpiele = itemView.findViewById(R.id.radioGroupSpiele);
 
-            // TODO--- DATENBANK (LESEN) und falls Einträge vorhanden, liste befüllen und aktuallisieren
 
+            // KARTENDETAILS DYNAMISCH AUS DB LADEN
+            // fetchSpiele-Methode, um die Kartendetails zu füllen
+            fetchSpiele("Spieleabend2", "Id", terminID, "Datum").whenComplete((datum, ex) -> {
+                handler.post(() -> {
+                    if (ex != null) textViewDate.setText("Fehler beim Laden des Datums");
+                    else textViewDate.setText("Datum: " + datum);
+                });
+            });
+            // Ort und Name laden
+            fetchSpiele("Spieleabend2", "Id", terminID, "Name").whenComplete((name, exName) -> {
+                fetchSpiele("Spieleabend2", "Id", terminID, "Ort").whenComplete((ort, exOrt) -> {
+                    handler.post(() -> {
+                        if (exName != null || exOrt != null) {
+                            textViewAddress.setText("Fehler beim Laden der Adresse");
+                        } else {
+                            textViewAddress.setText("Wo: " + name + ", " + ort);
+                        }
+                    });
+                });
+            });
+
+
+            // VORSCHLAGS-LOGIK
+            // TODO--- DATENBANK (LESEN) ---
+            // Lade alle Vorschläge aus 'SpielVorschlaege' WHERE Spieleabend_Id = terminID
+            // und fülle 'listenSpielVorschlaege.get(terminID)' und 'mapGameVotes.get(terminID)'
+
+            // Fülle die Umfrage-UI mit den (simulierten) Daten, die zu diesem 'terminID' gehören
+            updatePollUI(localRadioGroupSpiele, terminID);
 
             buttonVorschlagEingeben.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    String eingabe = editTextText.getText().toString().trim();
+                    String eingabe = localEditTextText.getText().toString().trim();
 
-                    if (!eingabe.isEmpty() && !listeSpielVerschlaege.contains(eingabe)) {
+                    ArrayList<String> vorschlaege = listenSpielVorschlaege.get(terminID);
+                    HashMap<String, Integer> votes = mapGameVotes.get(terminID);
 
-                        listeSpielVerschlaege.add(eingabe);
-                        gameVotes.put(eingabe, 0);
+                    if (!eingabe.isEmpty() && vorschlaege != null && !vorschlaege.contains(eingabe)) {
 
                         // TODO--- DATENBANK (SCHREIBEN / INSERT) ---
+                        // 'INSERT INTO SpielVorschlaege (Spieleabend_Id, SpielName, StimmenAnzahl) VALUES (terminID, eingabe, 0)'
 
-                        updatePollUI();
+                        vorschlaege.add(eingabe);
+                        if (votes != null) {
+                            votes.put(eingabe, 0);
+                        }
+
+                        updatePollUI(localRadioGroupSpiele, terminID);
                     }
-                    editTextText.setText("");
+                    localEditTextText.setText("");
                 }
             });
 
-
-
-
-
-
-
-
-            // add new created Card
             putCardViewLayoutHereInside.addView(itemView);
-
-
         }
-
-
     }
 
 
-    private void updatePollUI() {
+     // Aktualisiert eine RadioGroup EINER CardView mit den Daten eines Termins
+    private void updatePollUI(final RadioGroup radioGroupSpiele, final String terminID) {
         radioGroupSpiele.removeAllViews();
-
         LayoutInflater inflater = LayoutInflater.from(this);
+
+        ArrayList<String> listeSpielVerschlaege = listenSpielVorschlaege.get(terminID);
+        HashMap<String, Integer> gameVotes = mapGameVotes.get(terminID);
+        String lastVotedGame = mapLastVotedGame.get(terminID);
+
+        if (listeSpielVerschlaege == null || gameVotes == null) {
+            Log.e("UpdatePollUI", "Keine Daten für Termin-Key gefunden: " + terminID);
+            return;
+        }
 
         int totalVotes = 0;
         for (int votes : gameVotes.values()) {
             totalVotes += votes;
         }
 
-        for (String spiel : listeSpielVerschlaege) {
+        for (final String spiel : listeSpielVerschlaege) {
 
             View itemView = inflater.inflate(R.layout.poll_item, radioGroupSpiele, false);
 
@@ -253,7 +291,7 @@ public class MainActivity extends AppCompatActivity {
             ProgressBar progressBar = itemView.findViewById(R.id.poll_progress_bar);
             TextView voteCount = itemView.findViewById(R.id.poll_vote_count);
 
-            int votes = gameVotes.get(spiel);
+            int votes = gameVotes.getOrDefault(spiel, 0);
             radioButton.setText(spiel);
             voteCount.setText(String.valueOf(votes));
 
@@ -267,29 +305,26 @@ public class MainActivity extends AppCompatActivity {
             radioButton.setChecked(spiel.equals(lastVotedGame));
 
             radioButton.setOnClickListener(v -> {
-                onGameVoted(spiel);
+                onGameVoted(terminID, spiel, radioGroupSpiele);
             });
 
             radioGroupSpiele.addView(itemView);
         }
-
-
-
     }
-    // in MainActivity.java (ExecutorService + HttpURLConnection)
 
+    // in MainActivity.java (ExecutorService + HttpURLConnection)
     // über httpURLConnection
-    private CompletableFuture<String> fetchSpiele(String tabelle,String filterCol,String filterVal,String selectCol) {
+    private CompletableFuture<String> fetchSpiele(String tabelle, String filterCol, String filterVal, String selectCol) {
 
         CompletableFuture<String> future = new CompletableFuture<>();
 
         executor.execute(() -> {
             String baseUrl = null;
             try {
-                baseUrl = "http://10.0.2.2:3000/getColumn?table=" + URLEncoder.encode(tabelle,"UTF-8")
-                        + "&filterCol=" + URLEncoder.encode(filterCol,"UTF-8")
-                        + "&filterVal=" + URLEncoder.encode(filterVal,"UTF-8")
-                        + "&selectCol=" + URLEncoder.encode(selectCol,"UTF-8");
+                baseUrl = "http://10.0.2.2:3000/getColumn?table=" + URLEncoder.encode(tabelle, "UTF-8")
+                        + "&filterCol=" + URLEncoder.encode(filterCol, "UTF-8")
+                        + "&filterVal=" + URLEncoder.encode(filterVal, "UTF-8")
+                        + "&selectCol=" + URLEncoder.encode(selectCol, "UTF-8");
 
             } catch (UnsupportedEncodingException e) {
                 future.completeExceptionally(e);
@@ -338,6 +373,7 @@ public class MainActivity extends AppCompatActivity {
         });
         return future;
     }
+
 /*
         private void initializeViews() {
         // RatingBars
@@ -424,5 +460,6 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
-    } */
+    }
+*/
 }
