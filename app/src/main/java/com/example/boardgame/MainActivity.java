@@ -132,6 +132,35 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    // Methode, um Rating in der DB zu aktualisieren
+    private void updateRatingInDB(String terminID, String ratingColumn, float rating) {
+
+        JSONObject valuesToUpdate = new JSONObject();
+        try {
+            valuesToUpdate.put(ratingColumn, rating);
+        } catch (JSONException e) {
+            Log.e("UpdateRating", "JSON-Fehler beim Erstellen von 'values' für " + ratingColumn, e);
+            return;
+        }
+
+        int id;
+        try {
+            id = Integer.parseInt(terminID);
+        } catch (NumberFormatException e) {
+            Log.e("UpdateRating", "Konnte terminID '" + terminID + "' nicht in eine Zahl umwandeln.", e);
+            return;
+        }
+
+        updateRow("Spieleabend2", valuesToUpdate, "Id", id).whenComplete((response, ex) -> {
+            if (ex != null) {
+                Log.e("UpdateRating", "Fehler beim DB-Update für " + ratingColumn, ex);
+            } else {
+                Log.i("UpdateRating", "DB-Update erfolgreich für " + ratingColumn + ": " + response);
+            }
+        });
+    }
+
+
     // Methode, um die Stimmenanzahl in der DB zu aktualisieren
     private void updateDatabaseVote(String terminID, String spielName, int newVoteCount) {
         // ID für diesen Spielvorschlag finden
@@ -320,9 +349,7 @@ public class MainActivity extends AppCompatActivity {
                                         cardTextWieWarDasEssen.setText(feedback);
                                         Toast.makeText(MainActivity.this, feedback, Toast.LENGTH_SHORT).show();
 
-                                        // TODO--- DATENBANK (SCHREIBEN / UPDATE) ---
-                                        // Speichere die Bewertung für diesen 'terminID'
-                                        // z.B. updateRatingInDB(terminID, "EssenSterne", rating);
+                                        updateRatingInDB(terminID, "EssenSterne", rating);
                                     }
                                 }
                             });
@@ -346,8 +373,7 @@ public class MainActivity extends AppCompatActivity {
                                         cardTextGastgeberInBewerten.setText(feedback);
                                         Toast.makeText(MainActivity.this, feedback, Toast.LENGTH_SHORT).show();
 
-                                        // TODO--- DATENBANK (SCHREIBEN / UPDATE) ---
-                                        // z.B. updateRatingInDB(terminID, "GastgeberSterne", rating);
+                                        updateRatingInDB(terminID, "GastgeberSterne", rating);
                                     }
                                 }
                             });
@@ -371,8 +397,7 @@ public class MainActivity extends AppCompatActivity {
                                         cardTextWieWarDerAbend.setText(feedback);
                                         Toast.makeText(MainActivity.this, feedback, Toast.LENGTH_SHORT).show();
 
-                                        // TODO--- DATENBANK (SCHREIBEN / UPDATE) ---
-                                        // z.B. updateRatingInDB(terminID, "AbendSterne", rating);
+                                        updateRatingInDB(terminID, "AbendSterne", rating);
                                     }
                                 }
                             });
