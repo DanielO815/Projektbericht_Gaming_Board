@@ -155,9 +155,20 @@ app.put('/update', async (req, res) => {
   const setStatements = cols.map((c, i) => `${c} = @p${i}`);
   const query = `UPDATE dbo.${table} SET ${setStatements.join(', ')} WHERE ${where.key} = @whereVal; SELECT @@ROWCOUNT AS affected;`;
 
-  const inputs = cols.map((c, i) => {
+const inputs = cols.map((c, i) => {
     const val = values[c];
-    const type = typeof val === 'number' ? sql.Int : sql.NVarChar;
+    let type;
+
+    if (typeof val === 'number') {
+      if (Number.isInteger(val)) {
+        type = sql.Int;
+      } else {
+        type = sql.Float;
+      }
+    } else {
+      type = sql.NVarChar;
+    }
+
     return { name: `p${i}`, type, value: val };
   });
 
