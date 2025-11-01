@@ -12,16 +12,29 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.ResolverStyle;
+import java.time.temporal.ChronoUnit;
+
+import java.util.Date;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import android.annotation.SuppressLint;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -29,9 +42,9 @@ import android.widget.ProgressBar;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.RatingBar;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
@@ -41,10 +54,14 @@ import androidx.core.view.WindowInsetsCompat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Arrays;
+
 
 public class MainActivity extends AppCompatActivity {
 
     private LinearLayout putCardViewLayoutHereInside;
+
+    private ScrollView scrollView;
 
     // DB-IDs als Key
     // Liste aller Termin-IDs
@@ -67,6 +84,7 @@ public class MainActivity extends AppCompatActivity {
     ExecutorService executor = Executors.newSingleThreadExecutor();
     Handler handler = new Handler(Looper.getMainLooper());
 
+    @SuppressLint("WrongViewCast")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -79,6 +97,7 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
+        scrollView=findViewById(R.id.scrollView);
         putCardViewLayoutHereInside = findViewById(R.id.putCardViewLayoutHereInside);
 
         Button button = findViewById(R.id.button2);
@@ -93,6 +112,9 @@ public class MainActivity extends AppCompatActivity {
             mapGameVotes.clear();
             mapLastVotedGame.clear();
             putCardViewLayoutHereInside.removeAllViews();
+
+            //Tabelle Spieleabend aktualisieren
+            updateSpieleabend();
 
             // terminIDs aus der DB laden
             getCompleteTableAsync("Spieleabend2").whenComplete((list, ex) -> {
@@ -120,7 +142,7 @@ public class MainActivity extends AppCompatActivity {
                         }
 
                         // Karten erstellen
-                        createCardForDate();
+                        createCardForDate(list);
                         Toast.makeText(MainActivity.this, "Termine geladen!", Toast.LENGTH_SHORT).show();
 
                     } else {
@@ -131,6 +153,124 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private void updateSpieleabend(){
+        getCompleteTableAsync("Spieleabend2").whenComplete((list, ex) -> {
+            // Zurück auf dem UI-Thread
+            handler.post(() -> {
+                if (ex != null) {
+                    Log.e("LoadTermine", "Fehler beim Laden der Termine", ex);
+                    Toast.makeText(MainActivity.this, "Fehler: " + ex.getMessage(), Toast.LENGTH_LONG).show();
+                    return;
+                } else {
+                    Toast.makeText(MainActivity.this, "Keine Termine gefunden.", Toast.LENGTH_SHORT).show();
+                }
+            });
+            String lastElementDate=list.get(list.size()-1).getDatum().trim();
+            String dayDiff=daysBetweenToday(lastElementDate);
+            if (!dayDiff.equals("Error")) {
+                List<String> namen=Arrays.asList("Michel","Roger","Daniel");
+                List<String> orte = Arrays.asList("Magedeburgerstr. 10","Berliner Str. 50","Münchenerstr. 90");
+                int indexName=namen.indexOf(list.get(list.size()-1).getName().trim());
+                int dayValue = Integer.parseInt(dayDiff.trim());
+                if (dayValue<14) {
+                    //Toast.makeText(MainActivity.this, "Neue Spielabende werden erzeugt", Toast.LENGTH_SHORT).show();
+                    int dayCounter=7;
+                    String name;
+                    String ort;
+                    String lastDay=list.get(list.size()-1).getDatum().trim();
+                    for (int i = 0; (i+  dayValue) <14; i+=7)
+                    {
+                        name=namen.get(((i+indexName+1)%3));
+                        ort=orte.get(((i+indexName+1)%3));
+                        //einen neuen Spieleabend hinzufügen
+                        addNewSpieleabend(name,ort,lastDay,dayCounter);
+                        dayCounter+=7;
+                    }
+                }
+            }
+        });
+    }
+
+
+    private void addNewSpieleabend(String name, String ort, String letztesDatum,int dayCounter){
+        String newDate;
+        JSONObject newSpieleabendValues = new JSONObject();
+        try {
+            newSpieleabendValues.put("Name", name);
+            newSpieleabendValues.put("Ort", ort);
+            newDate=dateCalculater(letztesDatum,dayCounter);
+            newSpieleabendValues.put("Datum", newDate);
+            newSpieleabendValues.put("EssenSterne", "0");
+            newSpieleabendValues.put("GastgeberSterne","0");
+            newSpieleabendValues.put("AbendSterne","0");
+            //Test
+            /*newSpieleabendValues.put("Name", "Michel");
+            newSpieleabendValues.put("Ort", "Magedeburgerstr. 10");
+            newSpieleabendValues.put("Datum", "29.12.2023");
+            newSpieleabendValues.put("Spiele","TestSpiel");
+            */
+        } catch (Exception e) {
+            Log.e("JSON", "Fehler beim Spieleabend erzeugen", e);
+            Toast.makeText(MainActivity.this, "Fehler beim Spieleabend erzeugen", Toast.LENGTH_SHORT).show();
+            return; // Abbruch
+        }
+
+        // insertRow
+        insertRow("Spieleabend2", newSpieleabendValues).whenComplete((response, exInsert) -> {
+            handler.post(() -> {
+                if (exInsert != null) {
+                    Toast.makeText(MainActivity.this, "Fehler beim Erzeugen neuer Termine", Toast.LENGTH_SHORT).show();
+                    Log.e("InsertRow", "Fehler", exInsert);
+                    return;
+                }
+                Log.i("InsertRow", "Antwort: " + response);
+            });
+        });
+
+    }
+
+    private String dateCalculater(String dateStr,int plusDays){
+        String result = "";
+        String datePattern="dd.MM.uuuu";
+        LocalDate date;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
+            DateTimeFormatter fmt = DateTimeFormatter.ofPattern(datePattern)
+                    .withResolverStyle(ResolverStyle.STRICT);
+            date=LocalDate.parse(dateStr,fmt);
+            date=date.plusDays(plusDays);
+            result=date.format(fmt);
+        }
+        return result;
+    }
+
+    // gibt positive Tage für Zukunft, negative für Vergangenheit
+    public static String daysBetweenToday(String dateStr) {
+        DateTimeFormatter fmt = null; // strenge Prüfung (z.B. 31.02. ist ungültig)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            fmt = DateTimeFormatter.ofPattern("dd.MM.uuuu")
+                    .withResolverStyle(ResolverStyle.STRICT);
+        }
+
+        ZoneId zone = null; // deine Geräte-Zeitzone
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            zone = ZoneId.systemDefault();
+        }
+        LocalDate target = null;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            target = LocalDate.parse(dateStr, fmt);
+        }
+        LocalDate today  = null;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            today = LocalDate.now(zone);
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            return Long.toString(ChronoUnit.DAYS.between(today, target));
+        }else{
+            return "Error";
+        }
+    }
 
     // Methode, um Rating in der DB zu aktualisieren
     private void updateRatingInDB(String terminID, String ratingColumn, float rating) {
@@ -241,12 +381,27 @@ public class MainActivity extends AppCompatActivity {
         updatePollUI(radioGroupSpiele, terminID);
     }
 
+    private int getListIndex(List<Spieleaband2Item> list, int filterString){
+        int result = -1;
+        for (int i=0;i<list.size();i++){
+            Spieleaband2Item Spiel =list.get(i);
+            if (Spiel.getId()==filterString){
+                result=i;
+                break;
+            }
+        }
+        return result;
+    }
+
+
     // Erstellt Kartenansichten basierend auf den 'terminIDs'
-    private void createCardForDate() {
+    private void createCardForDate(List<Spieleaband2Item> list) {
 
         putCardViewLayoutHereInside.removeAllViews();
         LayoutInflater inflater = LayoutInflater.from(this);
-
+        int dayCounter=-1;
+        int listIndex;
+        boolean dateInFuture=false;
         // Iteriere über die terminIDs Liste
         for (final String terminID : terminIDs) {
 
@@ -259,6 +414,14 @@ public class MainActivity extends AppCompatActivity {
             final Button buttonVorschlagEingeben = itemView.findViewById(R.id.buttonVorschlagEingeben);
             final RadioGroup localRadioGroupSpiele = itemView.findViewById(R.id.radioGroupSpiele);
 
+            listIndex=getListIndex(list,Integer.parseInt(terminID));
+            Spieleaband2Item Spiel=list.get(listIndex);
+            if(istInDerVergangenheit(Spiel.getDatum())){
+                dayCounter+=1;//Zähler erhöhen
+                dateInFuture=false;
+            }else{
+                dateInFuture=true;
+            }
 
             // CardView Inhalte aus der DB laden
 
@@ -266,7 +429,10 @@ public class MainActivity extends AppCompatActivity {
             fetchSpiele("Spieleabend2", "Id", terminID, "Datum").whenComplete((datum, ex) -> {
                 handler.post(() -> {
                     if (ex != null) textViewDate.setText("Fehler beim Laden des Datums");
-                    else textViewDate.setText("Datum: " + datum);
+                    else{
+                        textViewDate.setText("Datum: " + datum.trim());
+
+                    }
                 });
             });
             // Ort und Name laden
@@ -276,7 +442,7 @@ public class MainActivity extends AppCompatActivity {
                         if (exName != null || exOrt != null) {
                             textViewAddress.setText("Fehler beim Laden der Adresse");
                         } else {
-                            textViewAddress.setText("Wo: " + name + ", " + ort);
+                            textViewAddress.setText("Wo: " + name.trim() + ", " + ort.trim());
                         }
                     });
                 });
@@ -287,6 +453,17 @@ public class MainActivity extends AppCompatActivity {
             final RatingBar cardRatingBarGastgeberIn = itemView.findViewById(R.id.ratingBarGastgeberIn);
             final RatingBar cardRatingBarEssen = itemView.findViewById(R.id.ratingBarEssen);
             final RatingBar cardRatingBarAbend = itemView.findViewById(R.id.ratingBar);
+
+            if(dateInFuture){
+                cardRatingBarGastgeberIn.setEnabled(false);
+                cardRatingBarEssen.setEnabled(false);
+                cardRatingBarAbend.setEnabled(false);
+                cardRatingBarGastgeberIn.setIsIndicator(true);
+                cardRatingBarEssen.setIsIndicator(true);
+                cardRatingBarAbend.setIsIndicator(true);
+            }else{
+                buttonVorschlagEingeben.setEnabled(false);
+            }
 
             // Zugehörige TextViews (zum Aktualisieren der Feedback-Texte)
             final TextView cardTextGastgeberInBewerten = itemView.findViewById(R.id.textGastgeberInBewerten);
@@ -493,7 +670,70 @@ public class MainActivity extends AppCompatActivity {
 
             putCardViewLayoutHereInside.addView(itemView);
         }
+        if (dayCounter>-1) {
+            showCardImmediatelyFullPage(dayCounter+1);
+        }// Auf nächsten Termin setzen
     }
+
+    public boolean istInDerVergangenheit(String datumString) {
+        SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
+        format.setLenient(false); // Strenge Prüfung des Datumsformats
+        boolean result = false;
+        try {
+            Date datum = format.parse(datumString);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                LocalDate gegeben=datum.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+                LocalDate gestern = LocalDate.now().minusDays(1);
+                result= gegeben.isBefore(gestern);
+            }
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return false; // oder Fehlerbehandlung je nach Bedarf
+        }
+        return result;
+    }
+
+
+    private void showCardImmediatelyFullPage(int desiredIndex) {
+        if (scrollView == null) return;
+
+        final ViewTreeObserver vto = scrollView.getViewTreeObserver();
+        final int safeIndex = clampIndex(desiredIndex, putCardViewLayoutHereInside.getChildCount());
+
+        final boolean[] heightsApplied = {false};
+        vto.addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+            @Override public boolean onPreDraw() {
+                // 1. PreDraw: Höhe der ScrollView ist bekannt -> allen Cards diese Höhe geben
+                if (!heightsApplied[0]) {
+                    heightsApplied[0] = true;
+
+                    int pageHeight = scrollView.getHeight();
+                    for (int i = 0; i < putCardViewLayoutHereInside.getChildCount(); i++) {
+                        View child = putCardViewLayoutHereInside.getChildAt(i);
+                        ViewGroup.LayoutParams lp = child.getLayoutParams();
+                        lp.width  = ViewGroup.LayoutParams.MATCH_PARENT;
+                        lp.height = pageHeight; // fixiere die Höhe auf eine "Seite"
+                        child.setLayoutParams(lp);
+                    }
+                    // Einmal neu layouten lassen, dann erneut PreDraw bekommen
+                    putCardViewLayoutHereInside.requestLayout();
+                    return false; // diesen Draw abbrechen, auf den nächsten warten
+                }
+
+                // 2. PreDraw: Höhen sind gesetzt -> jetzt deterministisch positionieren
+                scrollView.getViewTreeObserver().removeOnPreDrawListener(this);
+                int y = safeIndex * scrollView.getHeight();
+                scrollView.scrollTo(0, y); // sofort, ohne Animation/Flackern
+                return true;
+            }
+        });
+    }
+
+    private int clampIndex(int desired, int count) {
+        if (count <= 0) return 0;
+        return Math.max(0, Math.min(desired, count - 1));
+    }
+
 
 
     // Aktualisiert eine RadioGroup einer CardView mit den Daten des jeweiligen Termins
