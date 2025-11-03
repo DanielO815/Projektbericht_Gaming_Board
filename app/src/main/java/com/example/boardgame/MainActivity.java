@@ -140,7 +140,7 @@ public class MainActivity extends AppCompatActivity {
             });
         });
 
-        // 2. Logik für  Verspäte Mich!-Button
+        // 2. Logik für  Verspäte Mich!Button
         Button contactButton = findViewById(R.id.contactButton); //
         contactButton.setOnClickListener(v -> {
             // Startet den Berechtigungscheck und sendet dann die SMS
