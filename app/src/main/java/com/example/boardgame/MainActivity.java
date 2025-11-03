@@ -31,9 +31,15 @@ import android.widget.RadioGroup;
 import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.telephony.SmsManager;
+import android.Manifest;
+import android.content.pm.PackageManager;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -67,6 +73,10 @@ public class MainActivity extends AppCompatActivity {
     ExecutorService executor = Executors.newSingleThreadExecutor();
     Handler handler = new Handler(Looper.getMainLooper());
 
+    // Konstante für die Laufzeitberechtigung (WICHTIG!)
+    private static final int SMS_PERMISSION_REQUEST_CODE = 100;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -81,11 +91,11 @@ public class MainActivity extends AppCompatActivity {
 
         putCardViewLayoutHereInside = findViewById(R.id.putCardViewLayoutHereInside);
 
+        // 1. Logik für den Lade-Button (button2)
         Button button = findViewById(R.id.button2);
         button.setOnClickListener(v -> {
             // Lade die Karten basierend auf den Daten
             Toast.makeText(MainActivity.this, "Lade Termine...", Toast.LENGTH_SHORT).show();
-
 
             // UI leeren
             terminIDs.clear();
@@ -100,7 +110,7 @@ public class MainActivity extends AppCompatActivity {
                 handler.post(() -> {
                     if (ex != null) {
                         Log.e("LoadTermine", "Fehler beim Laden der Termine", ex);
-                        Toast.makeText(MainActivity.this, "Fehler: " + ex.getMessage(), Toast.LENGTH_LONG).show();
+                        Toast.makeText(MainActivity.this, "Fehler: " + ex.getMessage(), Toast.LENGTH_SHORT).show();
                         return;
                     }
 
@@ -129,7 +139,88 @@ public class MainActivity extends AppCompatActivity {
                 });
             });
         });
+
+        // 2. Logik für  Verspäte Mich!-Button
+        Button contactButton = findViewById(R.id.contactButton); //
+        contactButton.setOnClickListener(v -> {
+            // Startet den Berechtigungscheck und sendet dann die SMS
+            requestSmsPermissionAndSend();
+        });
     }
+
+    // SMS Methode, benötigt Berechtigung. Zum Test habe ich in Manifest Datei statische Berechtigung vergeben.
+
+    private void requestSmsPermissionAndSend() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
+
+            // Berechtigung wenn nicht erteilt, anfordern
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.SEND_SMS},
+                    SMS_PERMISSION_REQUEST_CODE);
+        } else {
+            // Berechtigung da, senden
+            sendSmsToContacts();
+        }
+    }
+
+    // Test SMS. Dort könnte man Kontakt Nummern hinzufügen, für die Gruppe z.B.
+    private void sendSmsToContacts() {
+        // Die zu sendende Nachricht (wie gewünscht)
+        final String SMS_MESSAGE = "Ich verspäte mich!";
+
+        List<String> contactNumbers = new ArrayList<>();
+
+        // TEST-Nummer für Emulator:
+        contactNumbers.add("5554");
+        // contactNumbers.add();
+
+
+        sendSMS(contactNumbers, SMS_MESSAGE);
+    }
+
+    // Laufzeit Berechtigung für SMS
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == SMS_PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Berechtigung erteilt! Senden der SMS.
+                sendSmsToContacts();
+            } else {
+                // Berechtigung verweigert.
+                Toast.makeText(this, "Berechtigung zum Senden von SMS verweigert. SMS wurde nicht gesendet.", Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
+    // Exeption falls keine Nmmer gefunden wurde.
+    private void sendSMS(List<String> phoneNumbers, String message) {
+        if (phoneNumbers == null || phoneNumbers.isEmpty()) {
+            Toast.makeText(this, "Keine Telefonnummern zum Senden gefunden.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        try {
+            SmsManager smsManager = SmsManager.getDefault();
+
+            for (String phoneNumber : phoneNumbers) {
+                // Senden der Nachricht
+                smsManager.sendTextMessage(phoneNumber, null, message, null, null);
+            }
+
+            // Rückmeldung im UI-Thread
+            handler.post(() -> {
+                Toast.makeText(MainActivity.this, "TEST-SMS gesendet: " + message, Toast.LENGTH_LONG).show();
+            });
+
+        } catch (Exception e) {
+            Log.e("SendSMS", "Fehler beim Senden der SMS", e);
+            handler.post(() -> {
+                Toast.makeText(MainActivity.this, "SMS-Fehler: Berechtigung, Nummer oder Dienst nicht verfügbar.", Toast.LENGTH_LONG).show();
+            });
+        }
+    }
+
 
 
     // Methode, um die Stimmenanzahl in der DB zu aktualisieren
@@ -743,6 +834,7 @@ public class MainActivity extends AppCompatActivity {
         });
         return future;
     }
+
 
     private CompletableFuture<String> updateRow(String tabelle, JSONObject values, String whereKey, Object whereValue) {
         CompletableFuture<String> future = new CompletableFuture<>();
